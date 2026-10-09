@@ -30,18 +30,32 @@ function saveExtra(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settin
 function theme(){let t=THEMES[state.branch]||THEMES.Army;document.documentElement.style.setProperty("--accent",t[0]);document.documentElement.style.setProperty("--hero-a",t[1]);document.documentElement.style.setProperty("--hero-b",t[2]);document.querySelector('meta[name="theme-color"]').setAttribute("content",t[2]);}
 function showPage(page){["home","packing","readiness"].forEach(name=>{document.getElementById(name+"Page").hidden=name!==page;});document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("nav-active",b.dataset.page===page));window.scrollTo(0,0);}
 function durationDays(){let n=Number(settings.durationValue);if(!Number.isFinite(n)||n<1)return 0;let factor=settings.durationUnit==="days"?1:settings.durationUnit==="weeks"?7:30;return Math.min(3650,Math.round(n*factor));}
-function quantitySuggestion(name){
+function quantitySuggestion(name,category){
  const days=durationDays();if(!days)return "";
  const lower=name.toLowerCase();
- // These are modest planning estimates, not official requirements. Assumes laundry/resupply may be available.
- if(/sock/.test(lower))return days<=7?"Suggestion: 7 pairs":days<=30?"Suggestion: 10 pairs":"Suggestion: 14 pairs";
- if(/underwear/.test(lower))return days<=7?"Suggestion: 7 pairs":days<=30?"Suggestion: 10 pairs":"Suggestion: 14 pairs";
- if(/toothpaste/.test(lower))return days<=14?"Suggestion: 1 travel-size tube":"Suggestion: 1 standard tube";
- if(/toothbrush/.test(lower))return "Suggestion: 1";
- if(/soap|shampoo|deodorant/.test(lower))return days<=14?"Suggestion: 1 travel-size item":"Suggestion: 1 standard item";
- if(/hygiene supplies/.test(lower))return days<=14?"Suggestion: a small starter supply":"Suggestion: a starter supply plus resupply plan";
- if(/towel/.test(lower))return "Suggestion: 1–2";
- return "";
+ const amount=(short,medium,long)=>days<=14?short:days<=45?medium:long;
+ // Personal-supply estimates are starting quantities, not a deployment-long stockpile.
+ if(/sock/.test(lower))return "Suggested: "+amount("7 pairs","10 pairs","14 pairs");
+ if(/underwear/.test(lower))return "Suggested: "+amount("7 pairs","10 pairs","14 pairs");
+ if(/toothbrush/.test(lower))return "Suggested: "+amount("1","1","2");
+ if(/toothpaste/.test(lower))return "Suggested: "+amount("1 travel tube","1 tube","2 tubes to start");
+ if(/deodorant|soap|shampoo|body wash/.test(lower))return "Suggested: "+amount("1 travel-size","1 standard-size","2 to start");
+ if(/towel/.test(lower))return "Suggested: "+amount("1","2","2");
+ if(/pt (uniform|gear)|physical training/.test(lower))return "Suggested: "+amount("2 sets","3 sets","4–5 sets")+"; follow unit guidance";
+ if(/ocp|uniform|blouse|trouser/.test(lower))return "Suggested: "+amount("2 sets","3 sets","4 sets")+"; follow unit guidance";
+ if(/boot/.test(lower))return "Suggested: "+amount("1 pair","1–2 pairs","2 pairs")+"; follow unit guidance";
+ if(/shoe|footwear/.test(lower))return "Suggested: "+amount("1 pair","1–2 pairs","2 pairs")+"; follow unit guidance";
+ if(/charger|cable|adapter/.test(lower))return "Suggested: "+amount("1","1","1 + spare if needed");
+ if(/medication|prescription/.test(lower))return "Quantity: confirm prescribed supply and refill plan";
+ if(/cac|military id|passport|document|orders|license/.test(lower))return "Quantity: 1 valid original, plus copies if directed";
+ if(/field equipment|issued|military gear|body armor|helmet|weapon/.test(lower)||category==="Military Gear")return "Quantity: follow official unit issue/packing list";
+ if(category==="Uniforms & Clothing")return "Suggested: "+amount("2 changes","3 changes","5 changes")+"; adjust for laundry";
+ if(category==="Hygiene")return "Suggested: "+amount("1 travel-size","1 standard-size","1–2 to start");
+ if(category==="Electronics")return "Suggested: 1; check power compatibility";
+ if(category==="Documents")return "Quantity: follow official document checklist";
+ if(category==="Footwear")return "Suggested: "+amount("1 pair","1 pair","1–2 pairs");
+ if(category==="Personal Items")return "Quantity: choose what you need; check baggage limits";
+ return "Quantity: check your unit list";
 }
 function renderDuration(){
  const field=$("durationValue");if(!field)return;
@@ -67,7 +81,7 @@ function render(){
  if(!bars.childElementCount)bars.append(el("span","muted","Assign items to bags to see their progress."));
  let filters=$("filters");filters.replaceChildren();["All",...CATEGORIES].forEach(c=>{let b=el("button",c===categoryFilter?"active":"",c);b.type="button";b.onclick=()=>{categoryFilter=c;render();};filters.append(b);});
  let list=$("itemList");list.replaceChildren();let visible=state.items.filter(x=>(categoryFilter==="All"||x.category===categoryFilter)&&(bagFilter==="All"||x.bag===bagFilter));$("empty").hidden=visible.length>0;
- visible.forEach(x=>{let row=el("div","item"+(x.packed?" done":"")),check=el("input");check.type="checkbox";check.checked=x.packed;check.setAttribute("aria-label","Packed: "+x.name);check.onchange=()=>{x.packed=check.checked;save();render();};let info=el("div","item-info"),name=el("div","name",x.name);info.append(name,el("small","details",x.category+" • "+x.bag));let suggestion=quantitySuggestion(x.name);if(suggestion)info.append(el("small","quantity-hint",suggestion));let actions=el("div","item-actions"),edit=el("button","edit","Edit");edit.type="button";edit.setAttribute("aria-label","Edit "+x.name);edit.onclick=()=>openEdit(x.id);let del=el("button","delete","×");del.type="button";del.setAttribute("aria-label","Remove "+x.name);del.onclick=()=>{if(confirm("Remove "+x.name+"?")){state.items=state.items.filter(i=>i.id!==x.id);save();render();}};actions.append(edit,del);row.append(check,info,actions);list.append(row);});
+ visible.forEach(x=>{let row=el("div","item"+(x.packed?" done":"")),check=el("input");check.type="checkbox";check.checked=x.packed;check.setAttribute("aria-label","Packed: "+x.name);check.onchange=()=>{x.packed=check.checked;save();render();};let info=el("div","item-info"),name=el("div","name",x.name);info.append(name,el("small","details",x.category+" • "+x.bag));let suggestion=quantitySuggestion(x.name,x.category);if(suggestion)info.append(el("small","quantity-hint",suggestion));let actions=el("div","item-actions"),edit=el("button","edit","Edit");edit.type="button";edit.setAttribute("aria-label","Edit "+x.name);edit.onclick=()=>openEdit(x.id);let del=el("button","delete","×");del.type="button";del.setAttribute("aria-label","Remove "+x.name);del.onclick=()=>{if(confirm("Remove "+x.name+"?")){state.items=state.items.filter(i=>i.id!==x.id);save();render();}};actions.append(edit,del);row.append(check,info,actions);list.append(row);});
 }
 function openEdit(id){let x=state.items.find(i=>i.id===id);if(!x)return;editingId=id;$("editName").value=x.name;$("editCategory").value=x.category;$("editBag").value=x.bag;$("editDialog").showModal();}
 $("editForm").onsubmit=e=>{e.preventDefault();let x=state.items.find(i=>i.id===editingId),name=$("editName").value.trim();if(!x||!name)return;x.name=name;x.category=$("editCategory").value;x.bag=$("editBag").value;save();$("editDialog").close();render();};
