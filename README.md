@@ -1,19 +1,17 @@
-# Deployment Ready V3
+# Deployment Ready V3.1
 
-## What's new
-- Home, Packing, Readiness tabs
-- Branch-inspired colors that change automatically with the branch selection
-- Optional target-date countdown
-- Editable readiness checklist with non-official suggestions
-- All Version 2 packing features retained
+Adds an optional deployment-length field and modest quantity suggestions for common personal supplies. Existing packing lists and readiness tasks remain stored under their existing local storage keys.
 
-## Upgrade safely
-1. In Version 2, export a packing backup first.
-2. Upload the seven files to the root of your existing GitHub repository and commit to main.
-3. Wait for GitHub Actions Pages deployment to succeed.
-4. Open your GitHub Pages URL in a private browser window to confirm V3.
-5. On iPhone, refresh the existing installed app. Avoid deleting it or clearing site data.
+## Update the existing GitHub Pages site
+1. Make a backup from the Packing page using **Export backup**.
+2. Upload all files from this folder to the root of the existing `deployment-ready` GitHub repository, replacing matching files.
+3. Commit changes and wait for the Pages deployment to succeed.
+4. Open `https://YOUR-USERNAME.github.io/deployment-ready/?v=3-1` to verify.
 
-V3 reads and continues writing the Version 2 packing data key, preserving the previous list on the same browser/device. New tasks and target date use separate local storage keys. Export backup currently covers packing data only; readiness tasks and target date are not included.
-
-Branch colors are inspired by branch identities, not official brand palettes. Starter templates are examples, not official requirements. Never enter classified or sensitive movement information.
+## Notes
+- Deployment length is optional. Leave it blank to disable quantity suggestions.
+- Suggestions only appear for recognizable item names such as socks, underwear, toothpaste, toothbrush, soap, shampoo, deodorant, hygiene supplies, and towels.
+- Suggestions are estimates, not official military requirements. They assume that laundry or resupply may be available and should be adjusted to official instructions.
+- The app does not remove or change packing items based on the duration.
+- The deployment length is saved locally on the device and does not sync.
+- Do not enter sensitive operational details.

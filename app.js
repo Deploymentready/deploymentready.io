@@ -23,12 +23,32 @@ const SETTINGS_KEY="deployment-ready-v3-settings";
 const TASKS_KEY="deployment-ready-v3-tasks";
 const SUGGESTED_TASKS=["Review official packing instructions","Confirm required administrative appointments","Check travel document requirements","Prepare a family contact plan","Review personal finances and bills","Confirm emergency contacts"];
 const THEMES={"Army":["#b7d38b","#293e2d","#1a2c20"],"Marine Corps":["#e6b875","#552b32","#2d1c21"],"Navy":["#e6c37e","#243d61","#17243b"],"Air Force":["#9ed2f2","#234d73","#172f48"],"Space Force":["#c5c8ec","#353653","#202138"],"Coast Guard":["#f3b4ad","#254c65","#172f43"]};
-function readSettings(){try{const v=JSON.parse(localStorage.getItem(SETTINGS_KEY));return v&&typeof v.date==="string"?v:{date:""};}catch(e){return {date:""};}}
+function readSettings(){try{const v=JSON.parse(localStorage.getItem(SETTINGS_KEY));return v&&typeof v.date==="string"?{date:v.date,durationValue:Number.isFinite(v.durationValue)?v.durationValue:"",durationUnit:["days","weeks","months"].includes(v.durationUnit)?v.durationUnit:"months"}:{date:"",durationValue:"",durationUnit:"months"};}catch(e){return {date:"",durationValue:"",durationUnit:"months"};}}
 function readTasks(){try{const v=JSON.parse(localStorage.getItem(TASKS_KEY));if(Array.isArray(v)&&v.length<=1000&&v.every(t=>t&&typeof t.id==="string"&&typeof t.name==="string"&&t.name.length<=100&&typeof t.done==="boolean"))return v;}catch(e){}return SUGGESTED_TASKS.map((name,i)=>({id:"suggested-"+i,name,done:false}));}
 let settings=readSettings(),tasks=readTasks();
 function saveExtra(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));localStorage.setItem(TASKS_KEY,JSON.stringify(tasks));}catch(e){alert("Saving failed. Check browser storage.");}}
 function theme(){let t=THEMES[state.branch]||THEMES.Army;document.documentElement.style.setProperty("--accent",t[0]);document.documentElement.style.setProperty("--hero-a",t[1]);document.documentElement.style.setProperty("--hero-b",t[2]);document.querySelector('meta[name="theme-color"]').setAttribute("content",t[2]);}
 function showPage(page){["home","packing","readiness"].forEach(name=>{document.getElementById(name+"Page").hidden=name!==page;});document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("nav-active",b.dataset.page===page));window.scrollTo(0,0);}
+function durationDays(){let n=Number(settings.durationValue);if(!Number.isFinite(n)||n<1)return 0;let factor=settings.durationUnit==="days"?1:settings.durationUnit==="weeks"?7:30;return Math.min(3650,Math.round(n*factor));}
+function quantitySuggestion(name){
+ const days=durationDays();if(!days)return "";
+ const lower=name.toLowerCase();
+ // These are modest planning estimates, not official requirements. Assumes laundry/resupply may be available.
+ if(/sock/.test(lower))return days<=7?"Suggestion: 7 pairs":days<=30?"Suggestion: 10 pairs":"Suggestion: 14 pairs";
+ if(/underwear/.test(lower))return days<=7?"Suggestion: 7 pairs":days<=30?"Suggestion: 10 pairs":"Suggestion: 14 pairs";
+ if(/toothpaste/.test(lower))return days<=14?"Suggestion: 1 travel-size tube":"Suggestion: 1 standard tube";
+ if(/toothbrush/.test(lower))return "Suggestion: 1";
+ if(/soap|shampoo|deodorant/.test(lower))return days<=14?"Suggestion: 1 travel-size item":"Suggestion: 1 standard item";
+ if(/hygiene supplies/.test(lower))return days<=14?"Suggestion: a small starter supply":"Suggestion: a starter supply plus resupply plan";
+ if(/towel/.test(lower))return "Suggestion: 1–2";
+ return "";
+}
+function renderDuration(){
+ const field=$("durationValue");if(!field)return;
+ field.value=settings.durationValue||"";$("durationUnit").value=settings.durationUnit||"months";
+ const days=durationDays();
+ $("durationStatus").textContent=days?`Saved. Suggestions use about ${days} days as a planning estimate; your official list takes priority.`:"Optional — leave blank if you prefer.";
+}
 function renderExtras(){theme();$("homeBranch").value=state.branch;let packed=state.items.filter(x=>x.packed).length;$("homePacking").textContent=(state.items.length?Math.round(packed/state.items.length*100):0)+"%";let done=tasks.filter(x=>x.done).length;$("homeReadiness").textContent=done+" of "+tasks.length;$("taskSummary").textContent=done+" of "+tasks.length+" tasks completed";
 const list=$("taskList");list.replaceChildren();tasks.forEach(t=>{let row=el("div","item"+(t.done?" done":"")),check=el("input");check.type="checkbox";check.checked=t.done;check.setAttribute("aria-label","Completed: "+t.name);check.onchange=()=>{t.done=check.checked;saveExtra();renderExtras();};let name=el("span","name",t.name),remove=el("button","delete","×");remove.type="button";remove.setAttribute("aria-label","Remove "+t.name);remove.onclick=()=>{if(confirm("Remove this task?")){tasks=tasks.filter(x=>x.id!==t.id);saveExtra();renderExtras();}};row.append(check,name,remove);list.append(row);});
 $("targetDate").value=settings.date;let msg="No date set — that's okay.";if(/^\d{4}-\d{2}-\d{2}$/.test(settings.date)){let today=new Date(),midnight=new Date(today.getFullYear(),today.getMonth(),today.getDate()),date=new Date(settings.date+"T00:00:00");if(!Number.isNaN(date.getTime())){let diff=Math.round((date-midnight)/86400000);msg=diff>0?diff+" days until your target date":diff===0?"Your target date is today":"Your target date has passed. You can update it anytime.";}}$("daysLeft").textContent=msg;}
@@ -47,7 +67,7 @@ function render(){
  if(!bars.childElementCount)bars.append(el("span","muted","Assign items to bags to see their progress."));
  let filters=$("filters");filters.replaceChildren();["All",...CATEGORIES].forEach(c=>{let b=el("button",c===categoryFilter?"active":"",c);b.type="button";b.onclick=()=>{categoryFilter=c;render();};filters.append(b);});
  let list=$("itemList");list.replaceChildren();let visible=state.items.filter(x=>(categoryFilter==="All"||x.category===categoryFilter)&&(bagFilter==="All"||x.bag===bagFilter));$("empty").hidden=visible.length>0;
- visible.forEach(x=>{let row=el("div","item"+(x.packed?" done":"")),check=el("input");check.type="checkbox";check.checked=x.packed;check.setAttribute("aria-label","Packed: "+x.name);check.onchange=()=>{x.packed=check.checked;save();render();};let info=el("div","item-info"),name=el("div","name",x.name);info.append(name,el("small","details",x.category+" • "+x.bag));let actions=el("div","item-actions"),edit=el("button","edit","Edit");edit.type="button";edit.setAttribute("aria-label","Edit "+x.name);edit.onclick=()=>openEdit(x.id);let del=el("button","delete","×");del.type="button";del.setAttribute("aria-label","Remove "+x.name);del.onclick=()=>{if(confirm("Remove "+x.name+"?")){state.items=state.items.filter(i=>i.id!==x.id);save();render();}};actions.append(edit,del);row.append(check,info,actions);list.append(row);});
+ visible.forEach(x=>{let row=el("div","item"+(x.packed?" done":"")),check=el("input");check.type="checkbox";check.checked=x.packed;check.setAttribute("aria-label","Packed: "+x.name);check.onchange=()=>{x.packed=check.checked;save();render();};let info=el("div","item-info"),name=el("div","name",x.name);info.append(name,el("small","details",x.category+" • "+x.bag));let suggestion=quantitySuggestion(x.name);if(suggestion)info.append(el("small","quantity-hint",suggestion));let actions=el("div","item-actions"),edit=el("button","edit","Edit");edit.type="button";edit.setAttribute("aria-label","Edit "+x.name);edit.onclick=()=>openEdit(x.id);let del=el("button","delete","×");del.type="button";del.setAttribute("aria-label","Remove "+x.name);del.onclick=()=>{if(confirm("Remove "+x.name+"?")){state.items=state.items.filter(i=>i.id!==x.id);save();render();}};actions.append(edit,del);row.append(check,info,actions);list.append(row);});
 }
 function openEdit(id){let x=state.items.find(i=>i.id===id);if(!x)return;editingId=id;$("editName").value=x.name;$("editCategory").value=x.category;$("editBag").value=x.bag;$("editDialog").showModal();}
 $("editForm").onsubmit=e=>{e.preventDefault();let x=state.items.find(i=>i.id===editingId),name=$("editName").value.trim();if(!x||!name)return;x.name=name;x.category=$("editCategory").value;x.bag=$("editBag").value;save();$("editDialog").close();render();};
@@ -70,4 +90,6 @@ $("taskForm").onsubmit=e=>{e.preventDefault();let name=$("taskName").value.trim(
 $("restoreTasks").onclick=()=>{let existing=new Set(tasks.map(x=>x.name.toLowerCase()));let missing=SUGGESTED_TASKS.filter(x=>!existing.has(x.toLowerCase()));if(!missing.length){alert("All suggested tasks are already on your list.");return;}missing.forEach(name=>tasks.push({id:newId(),name,done:false}));saveExtra();renderExtras();};
 $("targetDate").onchange=e=>{settings.date=e.target.value;saveExtra();renderExtras();};
 $("clearDate").onclick=()=>{settings.date="";saveExtra();renderExtras();};
+$("saveDuration").onclick=()=>{let raw=$("durationValue").value.trim(),n=Number(raw);if(raw&&(!Number.isInteger(n)||n<1||n>120)){alert("Enter a whole number from 1 to 120, or leave it blank.");return;}settings.durationValue=raw? n:"";settings.durationUnit=$("durationUnit").value;saveExtra();renderDuration();render();};
+renderDuration();
 showPage("home");saveExtra();renderExtras();

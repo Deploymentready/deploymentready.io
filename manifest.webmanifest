@@ -9,7 +9,7 @@
   "theme_color": "#101c19",
   "icons": [
     {
-      "src": "deployment-icon.png.png",
+      "src": "icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
