@@ -19,3 +19,10 @@ No accounts or servers. All data stays in localStorage in the browser. Exported 
 - Budget save and refresh; milestone add/complete/remove; phase tasks and Coming Home; print preview with budget OFF by default
 - Full backup version 3 export/preview/restore; old Stage 1/2 backup preview/restore; iPhone icon and offline
 - Verify URLs and service-worker behavior on the new domain.
+
+## V5.1 targeted reliability fixes (2026-10-09)
+- Full backup works even if the user has never saved their initial packing checklist (exports in-memory validated starter state).
+- Budget goal progress never shows a negative percentage when the projection is below zero.
+- Milestone submission rejects impossible calendar dates.
+- Service worker and asset cache identifiers updated to force fresh assets after deployment.
+- Guided tour unchanged. This is a targeted patch, not a comprehensive audit or browser QA certification.
