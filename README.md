@@ -1,21 +1,21 @@
-# Deployment Ready — Version 1
+# Deployment Ready V2
 
-A free, independent mobile-friendly packing checklist for all six U.S. military branches.
+A free installable packing web app for all six U.S. military branches.
 
-## Run locally
-Extract this ZIP and open `index.html` in a browser to try the interface. To test installation and offline support, serve the files over HTTPS or localhost.
+## Update your existing GitHub Pages site
+1. **First export a backup** from V1 on your phone if you have added important items.
+2. Extract this ZIP. In your GitHub `deployment-ready` repository choose **Add file → Upload files**.
+3. Upload the six app files in the ZIP to the repository **root**, replacing the existing files with the same names. Upload README.md if desired. Commit changes.
+4. GitHub Pages will automatically republish. Wait a few minutes, then reopen the existing site.
+5. If you still see V1, fully close and reopen the Home Screen app or open the live site in Safari and reload. Service-worker updates can require a second reload.
 
-## Publish for free with GitHub Pages
-1. Create a free GitHub account and a new **public** repository.
-2. Upload all six app files (`index.html`, `style.css`, `app.js`, `manifest.webmanifest`, `sw.js`, `icon.svg`) to the repository root.
-3. In repository **Settings → Pages**, choose **Deploy from a branch**, then **main** and **/(root)**. Save.
-4. Once published, open the provided HTTPS URL on an iPhone in Safari, tap Share → Add to Home Screen. On Android, use Chrome's Install app / Add to Home Screen option.
-5. Test the site online once before testing offline mode.
+## New features
+- Six branch-specific **suggested** templates, not official checklists.
+- Optional bag assignment and progress per bag.
+- Edit item name, category, and bag.
+- Category and bag filtering.
+- V1 saved data migration (on the same browser/origin).
+- Backup import/export and offline caching.
 
-## Notes
-- The branch selector labels the user's branch; starter items are currently generic, not branch-specific.
-- The app saves locally to the browser's localStorage. It does not sync between devices.
-- Backup export/import is available.
-- Deleting site data or changing browsers can erase locally saved items.
-- This is not an official DoD application. Verify equipment requirements with official instructions and do not enter sensitive operational details.
-- Free GitHub Pages hosting is subject to GitHub's terms and usage limits.
+## Privacy and limitations
+All data stays in browser localStorage; no accounts, analytics, or server. Clearing site data can delete saved lists. Browser storage for Safari and an installed iPhone web app may be separate: if your existing items do not appear, use Export/Import backup. Branch templates are illustrative; verify all requirements with official unit/command packing instructions. Do not store sensitive operational details.
